@@ -3,7 +3,7 @@ import os
 from twisted.application import service
 from buildbot.master import BuildMaster
 
-basedir = '/home/buildbot/zfs-buildbot/master'
+basedir = '/home/ubuntu/zfs-buildbot/master'
 rotateLength = 10000000
 maxRotatedFiles = 10
 configfile = 'master.cfg'

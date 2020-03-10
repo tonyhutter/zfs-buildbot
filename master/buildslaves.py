@@ -4,7 +4,7 @@
 import string
 import random
 import re
-from password import *
+from passwd import *
 from buildbot.plugins import util
 from buildbot.buildslave import BuildSlave
 from buildbot.buildslave.ec2 import EC2LatentBuildSlave
