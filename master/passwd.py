@@ -38,3 +38,5 @@ ec2_default_keypair_name = "buildbot"
 # pull requests.
 github_secret = "secret"
 github_token = "token"
+
+codecov_token = "fill_this_in"
