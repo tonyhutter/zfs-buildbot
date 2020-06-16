@@ -6,8 +6,8 @@ import random
 import re
 from password import *
 from buildbot.plugins import util
-from buildbot.buildslave import BuildSlave
-from buildbot.buildslave.ec2 import EC2LatentBuildSlave
+from buildbot.worker import Worker
+from buildbot.worker.ec2 import EC2LatentWorker
 
 ### BUILDER CLASSES
 class ZFSBuilderConfig(util.BuilderConfig):
@@ -70,7 +70,7 @@ class ZFSBuilderConfig(util.BuilderConfig):
 
 ### BUILD SLAVE CLASSES
 # Create large EC2 latent build slave
-class ZFSEC2Slave(EC2LatentBuildSlave):
+class ZFSEC2Slave(EC2LatentWorker):
     default_user_data = user_data = """#!/bin/sh -x
 # Make /dev/console the serial console instead of the video console
 # so we get our output in the text system log at boot.
@@ -193,13 +193,13 @@ esac
 
         # get_image can be used to determine an AMI when the slave starts.
         if callable(get_image):
-            # Trick EC2LatentBuildSlave input validation by providing a "valid" regex.
+            # Trick EC2LatentWorker input validation by providing a "valid" regex.
             # This won't actually be used because we override get_image().
             kwargs['valid_ami_location_regex'] = ''
             # If we just set `self.get_image = get_image` then self doesn't get passed.
             self.get_image = lambda: get_image(self)
 
-        EC2LatentBuildSlave.__init__(
+        EC2LatentWorker.__init__(
             self, name=name, password=password, instance_type=instance_type, 
             identifier=identifier, secret_identifier=secret_identifier, region=region,
             user_data=user_data, keypair_name=keypair_name, security_name=security_name,
@@ -216,7 +216,7 @@ class ZFSEC2StyleSlave(ZFSEC2Slave):
             spot_instance=True, **kwargs)
 
 # Create an HVM EC2 large latent build slave
-class ZFSEC2BuildSlave(ZFSEC2Slave):
+class ZFSEC2Worker(ZFSEC2Slave):
     def __init__(self, name, **kwargs):
         ZFSEC2Slave.__init__(self, name, mode="BUILD",
             instance_type="c5d.large", max_spot_price=0.10, placement='a',
