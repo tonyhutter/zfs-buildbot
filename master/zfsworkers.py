@@ -57,7 +57,7 @@ class ZFSBuilderConfig(util.BuilderConfig):
         # we didn't have a merge into master or a final commit on a pull request
         return requests[0]
 
-    def __init__(self, mergeRequests=False, nextWorker=None, nextBuild=None, **kwargs):
+    def __init__(self, collapseRequests=False, nextWorker=None, nextBuild=None, **kwargs):
         if nextWorker is None:
             nextWorker = ZFSBuilderConfig.nextWorker
 
@@ -66,7 +66,7 @@ class ZFSBuilderConfig(util.BuilderConfig):
 
         util.BuilderConfig.__init__(self, nextWorker=nextWorker,
                                     nextBuild=nextBuild,
-                                    mergeRequests=mergeRequests, **kwargs)
+                                    collapseRequests=collapseRequests, **kwargs)
 
 ### BUILD SLAVE CLASSES
 # Create large EC2 latent build slave
