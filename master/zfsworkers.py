@@ -182,14 +182,15 @@ esac
             else:
                 boot_device = "/dev/sda1"
 
-            block_device_map = { boot_device : boot_device_props,
-                                 "/dev/sdb": { "ephemeral_name": "ephemeral0" },
-                                 "/dev/sdc": { "ephemeral_name": "ephemeral1" },
-                                 "/dev/sdd": { "ephemeral_name": "ephemeral2" },
-                                 "/dev/sde": { "ephemeral_name": "ephemeral3" },
-                                 "/dev/sdf": { "ephemeral_name": "ephemeral4" },
-                                 "/dev/sdg": { "ephemeral_name": "ephemeral5" },
-                               }
+            block_device_map = [
+                    { boot_device : boot_device_props},
+                    {"/dev/sdb": { "ephemeral_name": "ephemeral0" }},
+                    {"/dev/sdc": { "ephemeral_name": "ephemeral1" }},
+                    {"/dev/sdd": { "ephemeral_name": "ephemeral2" }},
+                    {"/dev/sde": { "ephemeral_name": "ephemeral3" }},
+                    {"/dev/sdf": { "ephemeral_name": "ephemeral4" }},
+                    {"/dev/sdg": { "ephemeral_name": "ephemeral5" }}
+                    ]
 
         # get_image can be used to determine an AMI when the slave starts.
         if callable(get_image):
