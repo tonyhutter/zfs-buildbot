@@ -12,7 +12,7 @@ from buildbot.worker.ec2 import EC2LatentWorker
 ### BUILDER CLASSES
 class ZFSBuilderConfig(util.BuilderConfig):
     @staticmethod
-    def nextSlave(builder, slaves):
+    def nextWorker(builder, slaves):
         availableSlave = None
 
         for slave in slaves:
@@ -57,14 +57,14 @@ class ZFSBuilderConfig(util.BuilderConfig):
         # we didn't have a merge into master or a final commit on a pull request
         return requests[0]
 
-    def __init__(self, mergeRequests=False, nextSlave=None, nextBuild=None, **kwargs):
-        if nextSlave is None:
-            nextSlave = ZFSBuilderConfig.nextSlave
+    def __init__(self, mergeRequests=False, nextWorker=None, nextBuild=None, **kwargs):
+        if nextWorker is None:
+            nextWorker = ZFSBuilderConfig.nextWorker
 
         if nextBuild is None:
             nextBuild = ZFSBuilderConfig.nextBuild
 
-        util.BuilderConfig.__init__(self, nextSlave=nextSlave,
+        util.BuilderConfig.__init__(self, nextWorker=nextWorker,
                                     nextBuild=nextBuild,
                                     mergeRequests=mergeRequests, **kwargs)
 
