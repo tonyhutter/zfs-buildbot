@@ -12,7 +12,7 @@ from buildbot.worker.ec2 import EC2LatentWorker
 ### BUILDER CLASSES
 class ZFSBuilderConfig(util.BuilderConfig):
     @staticmethod
-    def nextWorker(builder, slaves):
+    def nextWorker(builder, slaves, buildrequest):
         availableSlave = None
 
         for slave in slaves:
