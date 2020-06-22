@@ -217,7 +217,7 @@ class ZFSEC2StyleSlave(ZFSEC2Slave):
             spot_instance=True, **kwargs)
 
 # Create an HVM EC2 large latent build slave
-class ZFSEC2Worker(ZFSEC2Slave):
+class ZFSEC2BuildWorker(ZFSEC2Slave):
     def __init__(self, name, **kwargs):
         ZFSEC2Slave.__init__(self, name, mode="BUILD",
             instance_type="c5d.large", max_spot_price=0.10, placement='a',
