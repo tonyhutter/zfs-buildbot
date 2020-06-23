@@ -16,10 +16,6 @@ class ZFSBuilderConfig(util.BuilderConfig):
         availableWorker = None
 
         for worker in workers:
-            # if we found an idle worker, immediate use this one
-            if worker.isIdle():
-                return worker
-
             # hold onto the first worker thats not spun up but free
             if availableWorker is None and worker.isAvailable():
                 availableWorker = worker
