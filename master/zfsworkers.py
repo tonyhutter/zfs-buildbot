@@ -12,24 +12,24 @@ from buildbot.worker.ec2 import EC2LatentWorker
 ### BUILDER CLASSES
 class ZFSBuilderConfig(util.BuilderConfig):
     @staticmethod
-    def nextWorker(builder, slaves, buildrequest):
-        availableSlave = None
+    def nextWorker(builder, workers, buildrequest):
+        availableWorker = None
 
-        for slave in slaves:
-            # if we found an idle slave, immediate use this one
-            if slave.isIdle():
-                return slave
+        for worker in workers:
+            # if we found an idle worker, immediate use this one
+            if worker.isIdle():
+                return worker
 
-            # hold onto the first slave thats not spun up but free
-            if availableSlave is None and slave.isAvailable():
-                availableSlave = slave
+            # hold onto the first worker thats not spun up but free
+            if availableWorker is None and worker.isAvailable():
+                availableWorker = worker
 
-        # we got here because there was no idle slave
-        if availableSlave is not None:
-            return availableSlave
+        # we got here because there was no idle worker
+        if availableWorker is not None:
+            return availableWorker
 
-        # randomly choose among all our busy slaves
-        return (random.choice(slaves) if slaves else None)
+        # randomly choose among all our busy workers
+        return (random.choice(workers) if workers else None)
 
     # builders should prioritize a merge into master or the final commit
     # from a pull request before building other commits. This avoids
@@ -69,8 +69,8 @@ class ZFSBuilderConfig(util.BuilderConfig):
                                     collapseRequests=collapseRequests, **kwargs)
 
 ### BUILD SLAVE CLASSES
-# Create large EC2 latent build slave
-class ZFSEC2Slave(EC2LatentWorker):
+# Create large EC2 latent build worker
+class ZFSEC2Worker(EC2LatentWorker):
     default_user_data = user_data = """#!/bin/sh -x
 # Make /dev/console the serial console instead of the video console
 # so we get our output in the text system log at boot.
@@ -159,10 +159,10 @@ esac
             url = "https://raw.githubusercontent.com/openzfs/zfs-buildbot/master/scripts/"
 
         if password is None:
-            password = ZFSEC2Slave.pass_generator()
+            password = ZFSEC2Worker.pass_generator()
 
         if user_data is None:
-            user_data = ZFSEC2Slave.default_user_data % (bin_path, master, name, password, mode, url)
+            user_data = ZFSEC2Worker.default_user_data % (bin_path, master, name, password, mode, url)
 
         if block_device_map is None:
             # io1 is 50 IOPS/GB, iops _must_ be specified for io1 only
@@ -192,7 +192,7 @@ esac
                     {"/dev/sdg": { "ephemeral_name": "ephemeral5" }}
                     ]
 
-        # get_image can be used to determine an AMI when the slave starts.
+        # get_image can be used to determine an AMI when the worker starts.
         if callable(get_image):
             # Trick EC2LatentWorker input validation by providing a "valid" regex.
             # This won't actually be used because we override get_image().
@@ -210,44 +210,44 @@ esac
             build_wait_timeout=build_wait_timeout, missing_timeout=missing_timeout,
             placement=placement, block_device_map=block_device_map, **kwargs)
 
-class ZFSEC2StyleSlave(ZFSEC2Slave):
+class ZFSEC2StyleWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
-        ZFSEC2Slave.__init__(self, name, mode="STYLE",
+        ZFSEC2Worker.__init__(self, name, mode="STYLE",
             instance_type="c5d.large", max_spot_price=0.10, placement='a',
             spot_instance=True, **kwargs)
 
-# Create an HVM EC2 large latent build slave
-class ZFSEC2BuildWorker(ZFSEC2Slave):
+# Create an HVM EC2 large latent build worker
+class ZFSEC2BuildWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
-        ZFSEC2Slave.__init__(self, name, mode="BUILD",
+        ZFSEC2Worker.__init__(self, name, mode="BUILD",
             instance_type="c5d.large", max_spot_price=0.10, placement='a',
             spot_instance=True, **kwargs)
 
-# Create an HVM EC2 latent test slave
-class ZFSEC2TestSlave(ZFSEC2Slave):
+# Create an HVM EC2 latent test worker
+class ZFSEC2TestWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
-        ZFSEC2Slave.__init__(self, name, build_wait_timeout=1, mode="TEST",
+        ZFSEC2Worker.__init__(self, name, build_wait_timeout=1, mode="TEST",
             instance_type="m5d.large", max_spot_price=0.10, placement='a',
             spot_instance=True, **kwargs)
 
-# Create an HVM EC2 latent test slave
+# Create an HVM EC2 latent test worker
 # AMI does not support an Elastic Network Adapter (ENA)
-class ZFSEC2ENATestSlave(ZFSEC2Slave):
+class ZFSEC2ENATestWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
-        ZFSEC2Slave.__init__(self, name, build_wait_timeout=1, mode="TEST",
+        ZFSEC2Worker.__init__(self, name, build_wait_timeout=1, mode="TEST",
             instance_type="m3.large", max_spot_price=0.10, placement='a',
             spot_instance=True, **kwargs)
 
-# Create an HVM EC2 latent test slave
-class ZFSEC2CoverageSlave(ZFSEC2Slave):
+# Create an HVM EC2 latent test worker
+class ZFSEC2CoverageWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
-        ZFSEC2Slave.__init__(self, name, build_wait_timeout=1, mode="TEST",
+        ZFSEC2Worker.__init__(self, name, build_wait_timeout=1, mode="TEST",
             instance_type="m3.xlarge", max_spot_price=0.10, placement='a',
             spot_instance=True, **kwargs)
 
-# Create a d2.xlarge slave for performance testing because they have disks
-class ZFSEC2PerfTestSlave(ZFSEC2Slave):
+# Create a d2.xlarge worker for performance testing because they have disks
+class ZFSEC2PerfTestWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
-        ZFSEC2Slave.__init__(self, name, build_wait_timeout=1, mode="PERF",
+        ZFSEC2Worker.__init__(self, name, build_wait_timeout=1, mode="PERF",
             instance_type="d2.xlarge", max_spot_price=0.60, placement='a',
             spot_instance=True, **kwargs)
