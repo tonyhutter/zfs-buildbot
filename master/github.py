@@ -130,7 +130,7 @@ class CustomGitHubEventHandler(GitHubEventHandler):
 
         return change
 
-    def handle_push(self, payload):
+    def handle_push(self, payload, event):
         changes = []
         refname = payload['ref']
 
