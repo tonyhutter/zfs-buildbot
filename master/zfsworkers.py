@@ -9,6 +9,8 @@ from buildbot.plugins import util
 from buildbot.worker import Worker
 from buildbot.worker.ec2 import EC2LatentWorker
 
+from twisted.python import log
+
 ### BUILDER CLASSES
 class ZFSBuilderConfig(util.BuilderConfig):
     @staticmethod
@@ -36,19 +38,24 @@ class ZFSBuilderConfig(util.BuilderConfig):
 
         # go thru each request's changes to prioritize them
         for request in requests:
-            for change in request.source.changes:
-                m = re.search(pattern, change.comments, re.I | re.M)
+            for source in request.sources:
+                (author, comment) = request.sources[source].patch_info
+                if author is None or comment is None:
+                    log.msg("author: [none], comment: [none]")
+                else:
+                    log.msg("author: " + author + ", comment: " + comment)
+                    m = re.search(pattern, comment, re.I | re.M)
 
-                # if we don't find the pattern, this was a merge to master
-                if m is None:
-                    return request
+                    # if we don't find the pattern, this was a merge to master
+                    if m is None:
+                        return request
 
-                part = int(m.group('part'))
-                total = int(m.group('total'))
+                    part = int(m.group('part'))
+                    total = int(m.group('total'))
 
-                # if the part is the same as the total, then we have the last commit
-                if part == total:
-                    return request
+                    # if the part is the same as the total, then we have the last commit
+                    if part == total:
+                        return request
 
         # we didn't have a merge into master or a final commit on a pull request
         return requests[0]
