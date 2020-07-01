@@ -170,7 +170,7 @@ esac
         if block_device_map is None:
             # io1 is 50 IOPS/GB, iops _must_ be specified for io1 only
             # Cf. https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
-            boot_device_props = { "volume_type": "gp2", "size": 24 }
+            boot_device_props = { "VolumeType": "gp2", "VolumeSize": 24 }
 
             # Reasonable default values for additional persistent disks, if desired
             persist_device_props = { "volume_type": "io1",
@@ -186,13 +186,13 @@ esac
                 boot_device = "/dev/sda1"
 
             block_device_map = [
-                    { boot_device : boot_device_props},
-                    {"/dev/sdb": { "ephemeral_name": "ephemeral0" }},
-                    {"/dev/sdc": { "ephemeral_name": "ephemeral1" }},
-                    {"/dev/sdd": { "ephemeral_name": "ephemeral2" }},
-                    {"/dev/sde": { "ephemeral_name": "ephemeral3" }},
-                    {"/dev/sdf": { "ephemeral_name": "ephemeral4" }},
-                    {"/dev/sdg": { "ephemeral_name": "ephemeral5" }}
+                    {"DeviceName": boot_device, "Ebs": boot_device_props},
+                    {"DeviceName": "/dev/sdb", "VirtualName": "ephemeral0" },
+                    {"DeviceName": "/dev/sdc", "VirtualName": "ephemeral1" },
+                    {"DeviceName": "/dev/sdd", "VirtualName": "ephemeral2" },
+                    {"DeviceName": "/dev/sde", "VirtualName": "ephemeral3" },
+                    {"DeviceName": "/dev/sdf", "VirtualName": "ephemeral4" },
+                    {"DeviceName": "/dev/sdg", "VirtualName": "ephemeral5" },
                     ]
 
         # get_image can be used to determine an AMI when the worker starts.
