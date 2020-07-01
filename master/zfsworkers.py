@@ -4,6 +4,7 @@
 import string
 import random
 import re
+import base64
 from password import *
 from buildbot.plugins import util
 from buildbot.worker import Worker
@@ -166,6 +167,10 @@ esac
 
         if user_data is None:
             user_data = ZFSEC2Worker.default_user_data % (bin_path, master, name, password, mode, url)
+
+            # Spot instances need user data to be base64 encoded?
+            # https://github.com/buildbot/buildbot/issues/3742
+            user_data = base64.b64encode(user_data.encode("ascii")).decode('ascii')
 
         if block_device_map is None:
             # io1 is 50 IOPS/GB, iops _must_ be specified for io1 only
