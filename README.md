@@ -327,3 +327,36 @@ Amazon ec2 instances and their terminology.
 ## Licensing
 
 See the [LICENSE](LICENSE) file for license rights and limitations.
+
+## Sample nginx config for buildbot
+
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+
+	server_name build.zfsonlinux.org;
+
+        location / {
+                include proxy_params;
+                proxy_pass http://localhost:8010;
+        }
+
+	location /scripts/ {
+		root /home/buildbot/zfs-buildbot;
+	}
+
+        # Server sent event (sse) settings
+        location /sse {
+                proxy_buffering off;
+                proxy_pass http://localhost:8010;
+        }
+
+        # Websocket settings
+        location /ws {
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+              proxy_pass http://localhost:8010;
+              proxy_read_timeout 6000s;
+        }
+}
