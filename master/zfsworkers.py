@@ -12,6 +12,28 @@ from buildbot.worker.ec2 import EC2LatentWorker
 
 from twisted.python import log
 
+bb_master = "build.zfsonlinux.org:9989"
+tag_name = "ZFSBuilder"
+region_placement = 'a'
+
+# If you specify dev_bb_master in password.py, we will use it instead of the
+# default bb_master.  This is useful during development.
+try: dev_bb_master
+except NameError: bb_master = bb_master
+else: bb_master = dev_bb_master
+
+# If you specify dev_tag_name in password.py, we will use it instead of the
+# default tag_name.  This is useful during development.
+try: dev_tag_name
+except NameError: tag_name = tag_name
+else: tag_name = dev_tag_name
+
+# If you specify dev_region_placement in password.py, we will use it instead of
+# the default region_placement.  This is useful during development.
+try: dev_region_placement
+except NameError: region_placement = region_placement
+else: region_placement = dev_region_placement
+
 ### BUILDER CLASSES
 class ZFSBuilderConfig(util.BuilderConfig):
     @staticmethod
@@ -42,9 +64,9 @@ class ZFSBuilderConfig(util.BuilderConfig):
             for source in request.sources:
                 (author, comment) = request.sources[source].patch_info
                 if author is None or comment is None:
-                    log.msg("author: [none], comment: [none]")
+                    log.msg("builder:" + builder.name + "author: [none], comment: [none]")
                 else:
-                    log.msg("author: " + author + ", comment: " + comment)
+                    log.msg("builder:" + builder.name + "authorr: " + author + ", comment: " + comment)
                     m = re.search(pattern, comment, re.I | re.M)
 
                     # if we don't find the pattern, this was a merge to master
@@ -137,7 +159,7 @@ esac
                 secret_identifier=ec2_default_secret,
                 keypair_name=ec2_default_keypair_name, security_name='ZFSBuilder',
                 subnet_id=None, security_group_ids=None,
-                user_data=None, region="us-west-1", placement='a', max_builds=1,
+                user_data=None, region="us-west-1", placement=region_placement, max_builds=1,
                 build_wait_timeout=60, spot_instance=False, max_spot_price=0.10,
                 price_multiplier=None, missing_timeout=60 * 40,
                 block_device_map=None, get_image=None, **kwargs):
@@ -146,10 +168,11 @@ esac
         bin_path = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
         tags = kwargs.get('tags')
+
         if not tags or tags is None:
             tags={
                 "ENV"      : "DEV",
-                "Name"     : "ZFSBuilder",
+                "Name"     : tag_name,
                 "ORG"      : "COMP",
                 "OWNER"    : "behlendorf1",
                 "PLATFORM" : self.name,
@@ -157,10 +180,16 @@ esac
             }
 
         if master in (None, ''):
-            master = "build.zfsonlinux.org:9989"
+            master = bb_master
 
         if url in (None, ''):
             url = "https://raw.githubusercontent.com/openzfs/zfs-buildbot/master/scripts/"
+            # Use dev_bb_url if specificed for the url (it can be set i/n
+            # password.py during development only).
+            try: dev_bb_url
+            except NameError: url = url
+            else: url = dev_bb_url
+
 
         if password is None:
             password = ZFSEC2Worker.pass_generator()
@@ -221,21 +250,21 @@ esac
 class ZFSEC2StyleWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
         ZFSEC2Worker.__init__(self, name, mode="STYLE",
-            instance_type="c5d.large", max_spot_price=0.10, placement='a',
+            instance_type="c5d.large", max_spot_price=0.10, placement=region_placement,
             spot_instance=True, **kwargs)
 
 # Create an HVM EC2 large latent build worker
 class ZFSEC2BuildWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
         ZFSEC2Worker.__init__(self, name, mode="BUILD",
-            instance_type="c5d.large", max_spot_price=0.10, placement='a',
+            instance_type="c5d.large", max_spot_price=0.10, placement=region_placement,
             spot_instance=True, **kwargs)
 
 # Create an HVM EC2 latent test worker
 class ZFSEC2TestWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
         ZFSEC2Worker.__init__(self, name, build_wait_timeout=1, mode="TEST",
-            instance_type="m5d.large", max_spot_price=0.10, placement='a',
+            instance_type="m5d.large", max_spot_price=0.10, placement=region_placement,
             spot_instance=True, **kwargs)
 
 # Create an HVM EC2 latent test worker
@@ -243,19 +272,19 @@ class ZFSEC2TestWorker(ZFSEC2Worker):
 class ZFSEC2ENATestWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
         ZFSEC2Worker.__init__(self, name, build_wait_timeout=1, mode="TEST",
-            instance_type="m3.large", max_spot_price=0.10, placement='a',
+            instance_type="m3.large", max_spot_price=0.10, placement=region_placement,
             spot_instance=True, **kwargs)
 
 # Create an HVM EC2 latent test worker
 class ZFSEC2CoverageWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
         ZFSEC2Worker.__init__(self, name, build_wait_timeout=1, mode="TEST",
-            instance_type="m3.xlarge", max_spot_price=0.10, placement='a',
+            instance_type="m3.xlarge", max_spot_price=0.10, placement=region_placement,
             spot_instance=True, **kwargs)
 
 # Create a d2.xlarge worker for performance testing because they have disks
 class ZFSEC2PerfTestWorker(ZFSEC2Worker):
     def __init__(self, name, **kwargs):
         ZFSEC2Worker.__init__(self, name, build_wait_timeout=1, mode="PERF",
-            instance_type="d2.xlarge", max_spot_price=0.60, placement='a',
+            instance_type="d2.xlarge", max_spot_price=0.60, placement=region_placement,
             spot_instance=True, **kwargs)
