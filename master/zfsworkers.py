@@ -62,12 +62,9 @@ class ZFSBuilderConfig(util.BuilderConfig):
         # go thru each request's changes to prioritize them
         for request in requests:
             for source in request.sources:
-                (author, comment) = request.sources[source].patch_info
-                if author is None or comment is None:
-                    log.msg("builder:" + builder.name + "author: [none], comment: [none]")
-                else:
-                    log.msg("builder:" + builder.name + "authorr: " + author + ", comment: " + comment)
-                    m = re.search(pattern, comment, re.I | re.M)
+                ss = request.sources[source]
+                for change in ss.changes:
+                    m = re.search(pattern, change.comments, re.I | re.M)
 
                     # if we don't find the pattern, this was a merge to master
                     if m is None:
