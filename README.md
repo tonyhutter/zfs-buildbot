@@ -236,7 +236,7 @@ expect a pristine test environment for every build and this can only be
 reliably accomplished by using a new instance for every test run.
 
 Once you've settled on the type of worker add a line to the `c['workers']`
-array in the BUILDSLAVES section of the `master.cfg`.  Use the functions
+array in the BUILDWORKERS section of the `master.cfg`.  Use the functions
 `ZFSEC2BuildWorker`, `ZFSEC2TestWorker`, or `ZFSEC2BuildWorker` as appropriate.
 
 * ZFSEC2BuildWorker(name, ami) - Takes a user defined `name` and available
