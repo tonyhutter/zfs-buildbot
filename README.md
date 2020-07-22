@@ -328,8 +328,61 @@ Amazon ec2 instances and their terminology.
 
 See the [LICENSE](LICENSE) file for license rights and limitations.
 
-## Sample nginx config for buildbot
+## Server setup
 
+### Get AMI setup
+
+Assuming a Ubuntu 20.04 AMI, do the following:
+
+```bash
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get dist-upgrade
+<reboot>
+sudo apt-get install python3-distutils python3-setuptools python3-venv python3-dev
+
+sudo apt-get install build-essential
+
+
+# Create buildbot user
+sudo adduser --home /home/buildbot buildbot
+
+# Copy over our SSH keys
+sudo cp -a .ssh /home/buildbot
+sudo chown -R buildbot:buildbot /home/buildbot/.ssh
+
+# Create virtual enviornment to pip install into
+python3 -m venv ~/sandbox
+
+# Enter virtual enviornment
+source ~/sandbox/bin/activate
+
+pip install wheel
+pip install urllib3
+pip install requests
+pip install boto3
+
+pip install txrequests
+    <or>
+pip install treq
+
+pip install 'buildbot[bundle]'
+```
+
+To startup buildbot manually:
+
+cd zfs-buildbot/master
+buildbot start .
+
+
+
+
+### Sample nginx config for buildbot
+
+The buildbot web interface starts up on port 8010 by default.  To use it on
+port 80, we proxy it through nginx.  This saves us from having to run
+buildbot as root to get it on port 80.
+```
 server {
 	listen 80 default_server;
 	listen [::]:80 default_server;
@@ -360,3 +413,4 @@ server {
               proxy_read_timeout 6000s;
         }
 }
+```
