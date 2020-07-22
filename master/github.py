@@ -5,6 +5,7 @@ import logging
 import json
 import string
 import re
+import urllib3
 
 from password import *
 from buildbot.www.hooks.github import GitHubEventHandler
@@ -25,13 +26,28 @@ builders_pr_release=builders_common+builders_linux+"centos6"
 builders_pr_minimum="arch,style"
 
 def query_url(url, token=None):
-    log.msg("Making request to '%s'" % url)
-    request = urllib2.Request(url)
-    if token:
-        request.add_header("Authorization", "token %s" % token)
-    response = urllib2.urlopen(request)
+    http = urllib3.PoolManager()
 
-    return json.loads(response.read())
+    # Note that github requires a user-agent.  Failing to specify one will
+    # result in:
+    #
+    # "Please make sure your request has a User-Agent header
+    # (http://developer.github.com/v3/#user-agent-required)
+    #
+    # urllib3 *just* added setting user-agent to their development branch
+    # https://github.com/urllib3/urllib3/pull/1750
+    # so we can probably get rid of our user-agent once the new urllib3 is
+    # released.
+    myheaders={"User-Agent": "python-urllib3"}
+
+    if token:
+        # I don't know if headers={} actually works
+        myheaders.update({"Authorization": "token %s" % token})
+
+    response = http.request("GET", url, headers=myheaders)
+
+    data = json.loads(response.data.decode('utf-8'))
+    return data
 
 #
 # Custom class to determine how to handle incoming Github changes.
@@ -253,7 +269,7 @@ class CustomGitHubEventHandler(GitHubEventHandler):
 
         return change
 
-    def handle_pull_request(self, payload):
+    def handle_pull_request(self, payload, event):
         changes = []
         pr_number = payload['number']
         commits_nr = payload['pull_request']['commits']
@@ -277,6 +293,7 @@ class CustomGitHubEventHandler(GitHubEventHandler):
         else:
             commits_url = payload['pull_request']['commits_url']
             commits = query_url(commits_url, token=github_token)
+            log.msg("got commits1")
 
             # Extract any dependency information.
             # Requires-spl: refs/pull/PR/head
@@ -301,7 +318,9 @@ class CustomGitHubEventHandler(GitHubEventHandler):
             nr = 0
             for commit in commits:
                 nr += 1
+                log.msg("getting commit2")
                 commit = query_url(commit['url'], token=github_token)
+                log.msg("got commit2")
                 change = self.handle_pull_request_commit(payload, commit,
                     nr, commits_nr, spl_pr, kernel_pr)
                 changes.append(change)
